@@ -48,7 +48,9 @@ Sites estáticos gerados com Node.js, HTML semântico, CSS responsivo e JavaScri
 - `src/templates.mjs`: layout, header, footer, CTAs, metadados e templates de páginas.
 - `public/assets/styles.css`: identidade visual, grids, responsividade e movimento reduzido.
 - `public/assets/site.js`: menu mobile, formulário e filtros de portfólio.
-- `public/assets/favicon.svg`: símbolo gráfico da nova base; substituir pela marca oficial se disponível.
+- `public/assets/brand/logo-dark.png`: logo aprovada, aplicada no cabeçalho e rodapé.
+- `public/assets/brand/favicon.png`: símbolo aprovado usado como favicon.
+- `public/assets/brand/apple-touch-icon.png`: símbolo em fundo escuro para ícone de dispositivo.
 - `public/assets/og-cover.svg`: fonte vetorial da imagem social.
 - `public/assets/og-cover.png`: imagem social para compartilhamento.
 - `scripts/build.mjs`: geração das páginas e sitemap.
@@ -83,7 +85,7 @@ Cada página possui title, description, canonical, Open Graph, idioma e um h1. H
 
 Os canonicals e a imagem social apontam para `https://www.logosdata.com.br`. Atualize `src/site.mjs` se o endereço definitivo mudar. Não deixe uma prévia indexável em outro domínio antes de revisar essa configuração.
 
-Sem bibliotecas de interface, fontes remotas, vídeos, imagens pesadas no conteúdo ou scripts de terceiros. A ilustração do hero usa CSS. Por isso não há imagens de conteúdo que precisem de lazy loading. Há foco visível, link para pular navegação, labels nos campos, menu acessível por teclado e respeito a `prefers-reduced-motion`. Core Web Vitals devem ser medidos após a hospedagem: o desempenho final depende também da infraestrutura.
+Sem bibliotecas de interface, fontes remotas, vídeos ou scripts de terceiros. Os arquivos de marca são PNGs locais. A ilustração do hero usa CSS. Por isso não há imagens de conteúdo que precisem de lazy loading. Há foco visível, link para pular navegação, labels nos campos, menu acessível por teclado e respeito a `prefers-reduced-motion`. Core Web Vitals devem ser medidos após a hospedagem: o desempenho final depende também da infraestrutura.
 
 ## Validação realizada
 
@@ -109,7 +111,7 @@ Não substituir o site atual sem revisar URLs antigas, hospedagem, identidade e 
 
 1. Revisar o projeto no repositório `tiagomarques-logosdata/logos-criacao-site`.
 2. Confirmar se esta base substituirá o site atual ou ficará inicialmente em ambiente de revisão.
-3. Disponibilizar logo oficial, foto do especialista, cases reais e eventuais assets originais.
+3. Disponibilizar foto do especialista, cases reais e eventuais assets originais. A logo aprovada foi aplicada nesta base.
 4. Confirmar telefone de atendimento, escopo de plataformas oferecidas e condições de suporte.
 5. Decidir se o orçamento continuará no WhatsApp ou será integrado a CRM/backend.
 6. Definir hospedagem e revisão das URLs antigas antes de alterar domínio ou produção.
