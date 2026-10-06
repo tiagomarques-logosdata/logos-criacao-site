@@ -1,0 +1,6 @@
+{
+  "name": "logos-data", "version": "1.0.0", "private": true,
+  "description": "Sites, e-commerce, dados, automação e inteligência artificial — Logos Data",
+  "scripts": { "dev": "node scripts/server.mjs", "build": "node scripts/build.mjs", "lint": "node scripts/check.mjs", "start": "node scripts/server.mjs" },
+  "engines": { "node": ">=20" }
+}
