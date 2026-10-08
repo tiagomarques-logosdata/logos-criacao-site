@@ -13,8 +13,24 @@ if (adsId && adsConversion) {
     if (!anchor) return;
     const destination = new URL(anchor.href, location.href);
     if (destination.hostname !== 'wa.me') return;
+    const opensHere = (!anchor.target || anchor.target === '_self') &&
+      !event.ctrlKey && !event.metaKey && !event.shiftKey && !event.altKey && event.button === 0;
+    let navigated = false;
+    const continueToWhatsApp = () => {
+      if (!opensHere || navigated) return;
+      navigated = true;
+      window.location.assign(anchor.href);
+    };
+    if (opensHere) {
+      event.preventDefault();
+      // Continue even when the tag is blocked or the network is unavailable.
+      window.setTimeout(continueToWhatsApp, 1000);
+    }
     // Only the conversion identifier is sent; the WhatsApp message stays private.
-    window.gtag('event', 'conversion', { send_to: adsConversion });
+    window.gtag('event', 'conversion', {
+      send_to: adsConversion, value: 1.0, currency: 'BRL',
+      event_callback: continueToWhatsApp, event_timeout: 1000,
+    });
   });
 }
 const menu = document.querySelector('.menu-toggle');
