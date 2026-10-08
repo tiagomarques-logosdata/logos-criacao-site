@@ -1,10 +1,13 @@
 'use strict';
 const adsConversion = document.querySelector('meta[name="google-ads-conversion"]')?.content;
-if (adsConversion) {
+const adsId = document.querySelector('meta[name="google-ads-id"]')?.content;
+if (adsId) {
   window.dataLayer = window.dataLayer || [];
   window.gtag = function () { window.dataLayer.push(arguments); };
   window.gtag('js', new Date());
-  window.gtag('config', adsConversion.split('/')[0]);
+  window.gtag('config', adsId);
+}
+if (adsId && adsConversion) {
   document.addEventListener('click', event => {
     const anchor = event.target.closest('a[href]');
     if (!anchor) return;
