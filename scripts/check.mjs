@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
 const root = fileURLToPath(new URL('../', import.meta.url));
 async function walk(path) { const names = await readdir(path); return (await Promise.all(names.map(async name => { const file = join(path,name); return (await stat(file)).isDirectory() ? walk(file) : [file]; }))).flat(); }
-for (const folder of ['src','scripts','public']) {
+for (const folder of ['src','scripts','public','server','api','automation']) {
   for (const file of await walk(join(root,folder))) {
     if (/\.(mjs|js)$/.test(file)) {
       const check = spawnSync(process.execPath,['--check',file],{encoding:'utf8'});

@@ -1,0 +1,18 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["projectName", "summary", "sitemap", "designPlan", "contentPlan", "functionalityPlan", "seoPlan", "missingInformation", "outOfScope", "needsReview", "codexPrompt"],
+  "properties": {
+    "projectName": { "type": "string" },
+    "summary": { "type": "string" },
+    "sitemap": { "type": "array", "items": { "type": "object", "additionalProperties": false, "required": ["route", "title", "sections"], "properties": { "route": { "type": "string" }, "title": { "type": "string" }, "sections": { "type": "array", "items": { "type": "string" } } } } },
+    "designPlan": { "type": "string" },
+    "contentPlan": { "type": "string" },
+    "functionalityPlan": { "type": "string" },
+    "seoPlan": { "type": "string" },
+    "missingInformation": { "type": "array", "items": { "type": "string" } },
+    "outOfScope": { "type": "array", "items": { "type": "string" } },
+    "needsReview": { "type": "boolean" },
+    "codexPrompt": { "type": "string" }
+  }
+}

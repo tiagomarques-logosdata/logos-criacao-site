@@ -1,0 +1,10 @@
+{
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "functions": { "api/workflow.mjs": { "maxDuration": 60 } },
+  "headers": [
+    { "source": "/briefing/:path*", "headers": [ { "key": "Cache-Control", "value": "no-store" }, { "key": "Referrer-Policy", "value": "no-referrer" }, { "key": "X-Robots-Tag", "value": "noindex, nofollow" } ] },
+    { "source": "/contratar/:path*", "headers": [ { "key": "Cache-Control", "value": "no-store" }, { "key": "Referrer-Policy", "value": "no-referrer" }, { "key": "X-Robots-Tag", "value": "noindex, nofollow" } ] },
+    { "source": "/pagamento/:path*", "headers": [ { "key": "Cache-Control", "value": "no-store" }, { "key": "Referrer-Policy", "value": "no-referrer" }, { "key": "X-Robots-Tag", "value": "noindex, nofollow" } ] }
+  ]
+}
