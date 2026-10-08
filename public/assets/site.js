@@ -64,7 +64,7 @@ form?.addEventListener('submit', event => {
   if (!form.reportValidity()) return;
   const data = new FormData(form);
   const message = [
-    'Olá! Vim pela página de sites da Logos Data. Vi a oferta de R$1.000 (R$900 no Pix).',
+    'Olá! Quero falar sobre meu site',
     `Nome: ${data.get('nome')}`,
     `Tipo de projeto: ${data.get('tipo')}`, `Sobre minha empresa: ${data.get('projeto')}`,
   ].join('\n');
