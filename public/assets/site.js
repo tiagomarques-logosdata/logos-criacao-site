@@ -1,4 +1,19 @@
 'use strict';
+const adsConversion = document.querySelector('meta[name="google-ads-conversion"]')?.content;
+if (adsConversion) {
+  window.dataLayer = window.dataLayer || [];
+  window.gtag = function () { window.dataLayer.push(arguments); };
+  window.gtag('js', new Date());
+  window.gtag('config', adsConversion.split('/')[0]);
+  document.addEventListener('click', event => {
+    const anchor = event.target.closest('a[href]');
+    if (!anchor) return;
+    const destination = new URL(anchor.href, location.href);
+    if (destination.hostname !== 'wa.me') return;
+    // Only the conversion identifier is sent; the WhatsApp message stays private.
+    window.gtag('event', 'conversion', { send_to: adsConversion });
+  });
+}
 const menu = document.querySelector('.menu-toggle');
 const nav = document.querySelector('#navigation');
 function closeMenu() {
@@ -24,6 +39,17 @@ document.addEventListener('click', event => {
   if (event.target.closest('#navigation a')) closeMenu();
 });
 const form = document.querySelector('#quote-form');
+function revealLinkedService() {
+  if (!location.hash) return;
+  const target = document.getElementById(decodeURIComponent(location.hash.slice(1)));
+  const details = target?.closest('.service-details');
+  if (details) {
+    details.open = true;
+    target.scrollIntoView();
+  }
+}
+window.addEventListener('hashchange', revealLinkedService);
+revealLinkedService();
 const existingSite = document.querySelector('#existing-site');
 const urlField = document.querySelector('#site-url-field');
 existingSite?.addEventListener('change', () => {
@@ -38,12 +64,9 @@ form?.addEventListener('submit', event => {
   if (!form.reportValidity()) return;
   const data = new FormData(form);
   const message = [
-    'Olá, gostaria de solicitar um orçamento à Logos Data.',
-    `Nome: ${data.get('nome')}`, `Empresa: ${data.get('empresa')}`,
-    `WhatsApp: ${data.get('whatsapp')}`, `E-mail: ${data.get('email')}`,
-    `Tipo de projeto: ${data.get('tipo')}`, `Projeto: ${data.get('projeto')}`,
-    `Já possui site: ${data.get('possuiSite')}`,
-    ...(data.get('url') ? [`Site atual: ${data.get('url')}`] : []),
+    'Olá! Vim pela página de sites da Logos Data. Vi a oferta de R$1.000 (R$900 no Pix).',
+    `Nome: ${data.get('nome')}`,
+    `Tipo de projeto: ${data.get('tipo')}`, `Sobre minha empresa: ${data.get('projeto')}`,
   ].join('\n');
   const link = document.createElement('a');
   link.href = `https://wa.me/5511983195720?text=${encodeURIComponent(message)}`;

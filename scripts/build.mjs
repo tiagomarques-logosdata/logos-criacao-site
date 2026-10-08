@@ -11,7 +11,7 @@ await mkdir(dist, { recursive: true });
 await cp(join(root, 'public'), dist, { recursive: true });
 export const pages = [
   ['/', 'Logos Data | Sites, E-commerce, Dados e Automação', 'Sites, lojas virtuais e aplicações web com integrações. Engenharia de dados, automação, business intelligence e inteligência artificial para negócios.', homePage()],
-  ['/desenvolvimento-de-sites/', 'Desenvolvimento de Sites e E-commerce | Logos Data', 'Criamos sites profissionais, landing pages e lojas virtuais. Desenvolvimento em Shopify, Wake, VTEX, Nuvemshop e WooCommerce, com APIs, ERP e CRM.', webPage(), true],
+  ['/desenvolvimento-de-sites/', 'Site profissional por R$1.000 | Logos Data', 'Criação de site profissional por R$1.000, ou R$900 no Pix com 10% de desconto. Atendimento em todo o Brasil. Fale diretamente com a Logos Data.', webPage(), true],
   ['/portfolio/', 'Portfólio | Logos Data', 'Conheça possibilidades de sites, e-commerce, dados, automação e integrações. Projetos demonstrativos são identificados claramente.', portfolioPage()],
   ['/sobre/', 'Sobre a Logos Data | Tecnologia para negócios', 'Conheça a Logos Data e Tiago Marques Pereira. Desenvolvimento web, engenharia de dados, automação e inteligência artificial para empresas.', aboutPage()],
   ...services.map(s => [`/${s.slug}/`, `${s.name} | Logos Data`, s.text, servicePage(s)]),
