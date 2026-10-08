@@ -25,6 +25,8 @@ Instale/use o Codex CLI e confirme a autenticação com `codex login status`. Na
 
 Execute `npm run worker -- --once` para uma consulta única ou `npm run worker` para consultar continuamente a cada 30 segundos. É um processo local; se fechar ou desligar o computador, a fila aguarda. A análise e a criação usam o Codex e podem consumir sua franquia. Cada etapa tem limite de 30 minutos.
 
+Antes de retirar um trabalho da fila, o executor faz uma chamada curta de verificação ao Codex. Se ela falhar, encerra sem retirar pedidos. `--check-codex` executa somente essa verificação. Rode o processo no terminal do usuário autenticado quando o ambiente de automação não conseguir iniciar a IA; essa chamada também pode consumir sua franquia.
+
 `node --env-file=.env.worker automation/check-workflow.mjs` verifica banco, autenticação da fila e login SMTP no Google sem enviar e-mail ou criar cobrança. As variáveis locais devem estar no arquivo ignorado `.env.worker`.
 
 Arquivos produzidos por pedido: `briefing.json`, `analysis.json`, `prompt-codex.md`, `resultado.md`, logs e o código criado. São dados privados de clientes: mantenha a pasta protegida. Conteúdo do cliente é tratado como dados, sem autorização para executar instruções, publicar sites ou acessar credenciais. Revise o resultado antes de entregar.

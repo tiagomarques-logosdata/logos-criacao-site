@@ -76,6 +76,18 @@ async function processJob(job) {
     console.error(`Projeto ${job.id}: execução interrompida; consulte os logs locais.`);
   }
 }
+// Confirm that the local agent can run before claiming any customer job.
+const checkFolder = join(projects, 'verificacao-executor');
+await mkdir(checkFolder, { recursive: true });
+try {
+  await runCodex(checkFolder, 'Responda somente EXECUTOR_OK. Não use ferramentas nem altere arquivos.', 'build');
+  if (!(await readFile(join(checkFolder, 'resultado.md'), 'utf8')).includes('EXECUTOR_OK')) throw new Error('Resposta de verificação inválida.');
+} catch {
+  console.error('O Codex não conseguiu executar a verificação. A fila de clientes não foi retirada. Confira autenticação, rede e os logs de verificacao-executor.');
+  process.exit(1);
+}
+console.log('Executor Codex verificado.');
+if (process.argv.includes('--check-codex')) process.exit(0);
 do {
   try {
     await api('retry-emails');
