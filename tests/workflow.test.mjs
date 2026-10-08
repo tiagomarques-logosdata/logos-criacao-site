@@ -75,6 +75,7 @@ test('envio: valida respostas e coloca um único briefing na fila', async () => 
 test('fila: trabalhador precisa de autenticação; desligado não cria cobranças', async () => {
   reset();
   await assert.rejects(workflow('claim', {}, { authorization: 'Bearer errado' }), /não autorizado/);
+  await assert.rejects(workflow('health', {}, { authorization: 'Bearer errado' }), /não autorizado/);
   assert.equal((await workflow('claim', {}, { authorization: `Bearer ${process.env.WORKFLOW_WORKER_SECRET}` })).job, null);
   process.env.WORKFLOW_ENABLED = 'false';
   await assert.rejects(workflow('checkout', { name: 'Teste', email: 'test@example.com' }), /configuração/);

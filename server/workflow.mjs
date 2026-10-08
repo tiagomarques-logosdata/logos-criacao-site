@@ -49,14 +49,19 @@ export function authenticateWorker(headers) {
   const a = Buffer.from(incoming), b = Buffer.from(expected);
   if (a.length !== b.length || !timingSafeEqual(a, b)) throw new HttpError(401, 'Acesso não autorizado.');
 }
+async function mailTransport() {
+  const { default: nodemailer } = await import('nodemailer');
+  return nodemailer.createTransport({ host: 'smtp.gmail.com', port: 465, secure: true,
+    auth: { user: required('SMTP_USER'), pass: required('SMTP_APP_PASSWORD').replace(/\s+/g, '') },
+    connectionTimeout: 10000, greetingTimeout: 10000, socketTimeout: 20000 });
+}
 async function sendBriefingEmail(order) {
   if (order.email_sent_at) return;
   const claims = await db('rpc/logos_claim_email', { method: 'POST', body: { p_id: order.id } });
   if (!claims?.length) return;
   try {
-    const { default: nodemailer } = await import('nodemailer');
     const user = required('SMTP_USER');
-    const transport = nodemailer.createTransport({ host: 'smtp.gmail.com', port: 465, secure: true, auth: { user, pass: required('SMTP_APP_PASSWORD') }, connectionTimeout: 10000, greetingTimeout: 10000, socketTimeout: 20000 });
+    const transport = await mailTransport();
     const link = `${origin()}/briefing/#token=${tokenForOrder(order.id)}`;
     await transport.sendMail({ from: `Logos Data <${user}>`, to: order.email,
       messageId: `<briefing-${order.id}@${new URL(origin()).hostname}>`,
@@ -115,6 +120,15 @@ export async function workflow(action, input, headers = {}) {
   if (action === 'access') { const order = await authenticatedOrder(headers); return { submitted: !!order.briefing }; }
   if (action === 'briefing') return submitBriefing(input, headers);
   authenticateWorker(headers);
+  if (action === 'health') {
+    tokenForOrder('configuration-check');
+    await db('logos_orders?select=id&limit=0');
+    const transport = await mailTransport();
+    try { await transport.verify(); }
+    catch { throw new HttpError(502, 'O Google não confirmou a conexão SMTP. Confira a senha de app e as permissões da conta.'); }
+    finally { transport.close(); }
+    return { database: true, smtp: true, enabled: process.env.WORKFLOW_ENABLED === 'true' };
+  }
   if (action === 'claim') {
     const rows = await db('rpc/logos_claim_job', { method: 'POST', body: { p_worker: 'codex-local' } });
     const job = rows?.[0];
