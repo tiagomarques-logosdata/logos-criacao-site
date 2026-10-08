@@ -86,7 +86,7 @@ export async function createCheckout(input) {
     redirect_url: `${origin()}/pagamento/`, webhook_url: `${origin()}/api/workflow?action=webhook`,
     items: [{ quantity: 1, price: 100000, description: 'Criação de site profissional — Logos Data · entrega em 14 dias' }], customer: { name, email } });
   const url = new URL(result.url);
-  if (url.protocol !== 'https:' || url.hostname !== 'checkout.infinitepay.com.br') throw new HttpError(502, 'A InfinitePay retornou um destino inválido.');
+  if (url.protocol !== 'https:' || !['checkout.infinitepay.com.br', 'checkout.infinitepay.io'].includes(url.hostname)) throw new HttpError(502, 'A InfinitePay retornou um destino inválido.');
   await db(`logos_orders?id=eq.${id}`, { method: 'PATCH', body: { checkout_url: url.href } });
   return { url: url.href };
 }

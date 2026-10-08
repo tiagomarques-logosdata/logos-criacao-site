@@ -8,7 +8,7 @@ form.addEventListener('submit', async event => {
     const response = await fetch('/api/workflow?action=checkout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: data.get('name'), email: data.get('email') }) });
     const result = await response.json(); if (!response.ok) throw new Error(result.error || 'Não foi possível preparar o pagamento.');
     const target = new URL(result.url);
-    if (target.protocol !== 'https:' || target.hostname !== 'checkout.infinitepay.com.br') throw new Error('Destino de pagamento inválido.');
+    if (target.protocol !== 'https:' || !['checkout.infinitepay.com.br', 'checkout.infinitepay.io'].includes(target.hostname)) throw new Error('Destino de pagamento inválido.');
     location.assign(target.href);
   } catch (error) { status.textContent = error.message; button.disabled = false; }
 });
