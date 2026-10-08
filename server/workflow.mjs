@@ -63,10 +63,11 @@ async function sendBriefingEmail(order) {
     const user = required('SMTP_USER');
     const transport = await mailTransport();
     const link = `${origin()}/briefing/#token=${tokenForOrder(order.id)}`;
+    const isTest = order.transaction_nsu === `TESTE:${order.id}`;
     await transport.sendMail({ from: `Logos Data <${user}>`, to: order.email,
       messageId: `<briefing-${order.id}@${new URL(origin()).hostname}>`,
-      subject: 'Seu pagamento foi confirmado — vamos criar seu site',
-      text: `Olá, ${order.name}!\n\nSeu pagamento foi confirmado. Agora queremos conhecer sua empresa e o site que você deseja.\n\nPreencha seu formulário individual:\n${link}\n\nSepare sua logo, textos, imagens e referências. Você pode salvar um rascunho no seu dispositivo. O link é válido por 30 dias e deve ser mantido privado.\n\nSuas respostas serão analisadas por IA para preparar o desenvolvimento do seu site. Não envie senhas ou dados de cartão.\n\nLogos Data\nWhatsApp: (11) 98319-5720` });
+      subject: isTest ? '[TESTE SEM COBRANÇA] Formulário para criação do site' : 'Seu pagamento foi confirmado — vamos criar seu site',
+      text: `Olá, ${order.name}!\n\n${isTest ? 'Este é um pedido de teste. Nenhum pagamento foi realizado. Ao enviar o formulário, a IA e o Codex executarão o fluxo real de criação, usando os limites da assinatura.' : 'Seu pagamento foi confirmado. Agora queremos conhecer sua empresa e o site que você deseja.'}\n\nPreencha seu formulário individual:\n${link}\n\nSepare sua logo, textos, imagens e referências. Você pode salvar um rascunho no seu dispositivo. O link é válido por 30 dias e deve ser mantido privado.\n\nSuas respostas serão analisadas por IA para preparar o desenvolvimento do seu site. Não envie senhas ou dados de cartão.\n\nLogos Data\nWhatsApp: (11) 98319-5720` });
     await db(`logos_orders?id=eq.${order.id}`, { method: 'PATCH', body: { email_sent_at: new Date().toISOString(), email_claimed_at: null } });
   } catch (error) {
     await db(`logos_orders?id=eq.${order.id}`, { method: 'PATCH', body: { email_claimed_at: null } }).catch(() => {});
@@ -120,6 +121,28 @@ export async function workflow(action, input, headers = {}) {
   if (action === 'access') { const order = await authenticatedOrder(headers); return { submitted: !!order.briefing }; }
   if (action === 'briefing') return submitBriefing(input, headers);
   authenticateWorker(headers);
+  if (action === 'test-order') {
+    enabled();
+    if (!uuid(input.id)) throw new HttpError(400, 'Identificador de teste inválido.');
+    // Only the configured sender may receive a mock order. Never call InfinitePay.
+    const email = required('SMTP_USER').trim().toLowerCase();
+    let order;
+    try { order = await orderById(input.id); }
+    catch (error) { if (error.status !== 404) throw error; }
+    if (order && (order.name !== 'TESTE — Logos Data' || order.email !== email || (order.transaction_nsu && order.transaction_nsu !== `TESTE:${input.id}`))) throw new HttpError(409, 'Esse identificador pertence a outro pedido.');
+    if (!order) {
+      const created = await db('rpc/logos_create_order', { method: 'POST', body: { p_id: input.id, p_name: 'TESTE — Logos Data', p_email: email, p_token_hash: hashToken(tokenForOrder(input.id)) } });
+      if (!created?.length) throw new HttpError(429, 'Muitas tentativas. Aguarde para criar outro teste.');
+    }
+    if (!order?.paid_at) await db(`logos_orders?id=eq.${input.id}&paid_at=is.null`, { method: 'PATCH', body: {
+      paid_at: new Date().toISOString(), status: 'paid', transaction_nsu: `TESTE:${input.id}`,
+      result_note: 'TESTE SEM COBRANÇA: liberação administrativa; nenhum pagamento recebido.',
+      token_expires_at: new Date(Date.now() + 30 * 86400000).toISOString()
+    } });
+    await sendBriefingEmail(await orderById(input.id));
+    const result = await orderById(input.id);
+    return { id: result.id, test: true, emailSent: !!result.email_sent_at };
+  }
   if (action === 'health') {
     tokenForOrder('configuration-check');
     await db('logos_orders?select=id&limit=0');

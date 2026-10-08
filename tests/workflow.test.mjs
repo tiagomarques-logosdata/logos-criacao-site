@@ -98,4 +98,30 @@ test('checkout: aceita os dois domínios da operadora e rejeita imitações', as
     else assert.equal(new URL((await call).url).hostname, host);
   }
 });
+test('pedido de teste: acesso privado, destinatário fixo, nenhuma chamada à operadora e repetição segura', async () => {
+  reset();
+  const headers = { authorization: `Bearer ${process.env.WORKFLOW_WORKER_SECRET}` };
+  await assert.rejects(workflow('test-order', { id }), /não autorizado/);
+  await assert.rejects(workflow('test-order', { id }, headers), /outro pedido/);
+  let stored = null, creates = 0, operatorCalls = 0;
+  global.fetch = async (input, options = {}) => {
+    const url = new URL(input);
+    if (url.hostname === 'api.checkout.infinitepay.io') { operatorCalls++; throw new Error('Operadora proibida neste teste'); }
+    if (url.hostname !== 'test.supabase.co') throw new Error('Unexpected destination');
+    if (url.pathname.endsWith('/rpc/logos_create_order')) {
+      creates++; const body = JSON.parse(options.body);
+      stored = { id: body.p_id, name: body.p_name, email: body.p_email, email_sent_at: new Date().toISOString() };
+      return Response.json([stored]);
+    }
+    if (options.method === 'PATCH') Object.assign(stored, JSON.parse(options.body));
+    return Response.json(stored ? [stored] : []);
+  };
+  const result = await workflow('test-order', { id, email: 'other@example.com' }, headers);
+  assert.equal(result.test, true); assert.equal(result.emailSent, true);
+  assert.equal(stored.email, process.env.SMTP_USER);
+  assert.equal(stored.transaction_nsu, `TESTE:${id}`);
+  assert.match(stored.result_note, /nenhum pagamento recebido/);
+  await workflow('test-order', { id }, headers);
+  assert.equal(creates, 1); assert.equal(operatorCalls, 0);
+});
 test.after(() => { global.fetch = originalFetch; });
