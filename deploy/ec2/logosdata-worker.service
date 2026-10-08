@@ -1,0 +1,26 @@
+[Unit]
+Description=Logos Data - executor dos briefings
+Wants=network-online.target
+After=network-online.target
+StartLimitIntervalSec=3600
+StartLimitBurst=3
+
+[Service]
+Type=simple
+User=logos-worker
+Group=logos-worker
+WorkingDirectory=/opt/logosdata-worker/app
+EnvironmentFile=/etc/logosdata-worker.env
+Environment=HOME=/var/lib/logosdata-worker
+Environment=PATH=/opt/logosdata-worker/tools/bin:/usr/local/bin:/usr/bin:/bin
+ExecStart=/usr/bin/node-22 automation/codex-worker.mjs
+Restart=on-failure
+RestartSec=60
+KillMode=control-group
+TimeoutStopSec=30
+UMask=0077
+PrivateTmp=true
+ProtectSystem=full
+
+[Install]
+WantedBy=multi-user.target
