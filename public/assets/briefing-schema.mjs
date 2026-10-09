@@ -33,7 +33,7 @@ export const sections = [
     field('concorrentes', 'Quem são seus concorrentes? Cole os sites e diga como quer se diferenciar.'),
     field('evitar', 'O que você não quer no visual ou no conteúdo?'),
     field('imagens', 'Link das fotos, vídeos e outros materiais da empresa', 'url'),
-    field('imagensFaltantes', 'Se faltarem imagens, podemos usar imagens licenciadas ou geradas por IA? Quais temas representam sua empresa?'),
+    field('imagensFaltantes', 'Se faltarem imagens, podemos usar imagens licenciadas ou criar imagens para seu site? Quais temas representam sua empresa?'),
     field('animacoes', 'Preferência por animações', 'select', { options: ['Discretas', 'Quase nenhuma', 'Mais marcantes, sem atrapalhar a navegação', 'Quero uma recomendação'] }),
   ] },
   { id: 'conteudo', title: 'Páginas e conteúdo', intro: 'Não precisa escrever tudo de uma vez. Se algo ainda não estiver pronto, indique o que falta.', fields: [
@@ -74,7 +74,7 @@ export const sections = [
     field('edicao', 'Quem vai atualizar o site? O que precisa conseguir alterar?'),
     field('acessibilidade', 'Existem necessidades de acessibilidade específicas do seu público?'),
   ] },
-  { id: 'loja', title: 'Detalhes da loja virtual', when: ['Loja virtual'], intro: 'Esta etapa aparece para projetos de loja. A IA identificará necessidades que exigem escopo adicional.', fields: [
+  { id: 'loja', title: 'Detalhes da loja virtual', when: ['Loja virtual'], intro: 'Esta etapa aparece para projetos de loja. Nosso time avaliará as necessidades que exigem escopo adicional.', fields: [
     field('produtos', 'Quais produtos ou serviços serão vendidos? Quantidade, categorias e variações.'),
     field('catalogoProdutos', 'Link da planilha ou catálogo: nomes, descrições, preços, fotos, estoque e códigos', 'url'),
     field('plataforma', 'Já possui plataforma de e-commerce? Qual?', 'text'),
@@ -111,7 +111,7 @@ export const sections = [
     field('restricoes', 'Há datas importantes, regras técnicas, restrições ou exigências do seu setor?'),
     field('prioridades', 'Se precisar priorizar, quais são as três coisas mais importantes?'),
     field('observacoes', 'O que mais precisamos saber?'),
-    field('autorizacao', 'Confirmo que posso usar os materiais enviados e autorizo a Logos Data a analisar estas respostas com IA para planejar e desenvolver meu site.', 'checkbox', { required: true }),
+    field('autorizacao', 'Confirmo que posso usar os materiais enviados e autorizo o time da Logos Data a analisar estas respostas para planejar e desenvolver meu site.', 'checkbox', { required: true }),
   ] },
 ];
 export function activeSections(answers) { return sections.filter(section => !section.when || section.when.includes(answers.tipo)); }
