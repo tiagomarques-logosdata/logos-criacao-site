@@ -15,6 +15,7 @@
     "node": ">=20"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.117.3",
     "nodemailer": "^10.0.16"
   }
 }
