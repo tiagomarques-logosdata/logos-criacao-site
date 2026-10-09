@@ -8,7 +8,19 @@ const incomingToken = hash.get('token');
 if (incomingToken) { sessionStorage.setItem('logos-brief-token', incomingToken); history.replaceState(null, '', location.pathname); }
 const token = incomingToken || sessionStorage.getItem('logos-brief-token') || '';
 const draftKey = `logos-brief-draft-${token ? token.slice(0, 16) : 'preview'}`;
-let step = 0, canSubmit = false, sent = false;
+let step = 0, canSubmit = false, sent = false, sending = false;
+function showCompletion() {
+  sent = true; canSubmit = false;
+  form.querySelectorAll('input, select, textarea, button').forEach(field => { field.disabled = true; });
+  try { localStorage.removeItem(draftKey); } catch { /* Completion does not depend on browser storage. */ }
+  document.querySelector('.brief-hero').hidden = true;
+  document.querySelector('.brief-layout').hidden = true;
+  banner.hidden = true;
+  const completion = document.querySelector('#brief-complete');
+  completion.hidden = false;
+  completion.querySelector('h2').focus({ preventScroll: true });
+  completion.scrollIntoView({ block: 'start', behavior: 'instant' });
+}
 const answers = () => Object.fromEntries(sections.flatMap(s => s.fields).map(q => {
   const el = form.elements.namedItem(q.id);
   return [q.id, q.type === 'checkbox' ? el.checked : el.value];
@@ -83,13 +95,14 @@ document.querySelector('#export-brief').addEventListener('click', () => {
   const url = URL.createObjectURL(blob), link = document.createElement('a'); link.href = url; link.download = 'briefing-meu-site.json'; link.click(); URL.revokeObjectURL(url);
 });
 form.addEventListener('submit', async event => {
-  event.preventDefault(); if (!canSubmit || sent) return;
+  event.preventDefault(); if (!canSubmit || sent || sending) return;
   try {
-    const values = normalizeAnswers(answers()); submit.disabled = true; status.textContent = 'Enviando seu briefing…';
+    const values = normalizeAnswers(answers()); sending = true; submit.disabled = true; status.textContent = 'Enviando seu briefing…';
     const response = await fetch('/api/workflow?action=briefing', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ schemaVersion, answers: values }) });
-    const result = await response.json(); if (!response.ok) throw new Error(result.error || 'Não foi possível enviar.');
-    sent = true; localStorage.removeItem(draftKey); status.textContent = 'Briefing recebido! Suas respostas estão na fila de análise para preparar o desenvolvimento do site.';
+    const result = await response.json(); if (!response.ok || result.accepted !== true) throw new Error(result.error || 'Não foi possível enviar.');
+    showCompletion();
   } catch (error) { status.textContent = error.message; submit.disabled = !canSubmit || sent; }
+  finally { sending = false; }
 });
 render();
 if (!token) banner.textContent = 'Prévia do formulário. Você pode conhecer as perguntas e baixar suas respostas. Para enviar, use o link individual recebido por e-mail após a compra.';
@@ -99,6 +112,6 @@ else {
     const result = await response.json(); if (!response.ok) throw new Error(result.error || 'Link inválido.');
     sent = result.submitted; canSubmit = !sent;
     banner.textContent = sent ? 'Este pedido já possui um briefing enviado.' : 'Seu acesso está confirmado. Preencha o briefing abaixo.';
-    render();
+    if (sent) showCompletion(); else render();
   } catch (error) { banner.textContent = error.message; }
 }
