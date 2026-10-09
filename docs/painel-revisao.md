@@ -11,3 +11,5 @@ O painel mostra até os 100 pedidos mais recentes, com filtro por status, respos
 Salvar exige uma observação e mantém o pedido em revisão. Salvar e reenviar altera a fila de maneira atômica e salva histórico antes/depois. Somente needs_review/failed permitem edição. Um conflito de versão ou mudança de status retorna 409 sem sobrescrever; atualizar antes de continuar. Corrigir as respostas após falar com o cliente, então reenviar. A nova análise pode encontrar pendências novamente. Não há botão para ignorar escopo ou restrições nem publicação automática.
 
 O status completed significa primeira versão gerada para revisão do time. Nenhum e-mail de cliente anuncia produção concluída. Materiais por links não são baixados nem verificados pelo painel.
+
+Pedidos com status created (aguardando pagamento) somem da lista após três horas da criação. Os registros são preservados e a confirmação de pagamento tardio continua funcionando. Pedidos em outros status não expiram na lista. O painel atualiza a cada 30 segundos enquanto visível, sem edição não salva e sem envio em andamento; também há o botão Atualizar.

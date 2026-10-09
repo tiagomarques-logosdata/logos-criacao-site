@@ -37,4 +37,20 @@ test('aviso de revisão vai ao responsável; claim evita repetir e falha libera 
  claimed=false;nodemailer.createTransport=()=>({sendMail:async()=>{throw Error('smtp');},close(){}});
  await assert.rejects(notifyReview(order),/tentado novamente/);assert.equal(patches.at(-1).review_email_claimed_at,null);
 });
+test('lista oculta criação sem pagamento após três horas e preserva pedidos pagos antigos',async()=>{
+ const now=Date.now();let filter;
+ const rows=[{id:'recent',status:'created',created_at:new Date(now-2*3600000).toISOString()},
+ {id:'expired',status:'created',created_at:new Date(now-4*3600000).toISOString()},
+ {id:'paid',status:'paid',created_at:new Date(now-48*3600000).toISOString()},
+ {id:'review',status:'needs_review',created_at:new Date(now-48*3600000).toISOString()}];
+ global.fetch=async input=>{
+  const url=new URL(input);if(url.pathname.includes('logos_admin_sessions'))return Response.json([{}]);
+  filter=url.searchParams.get('or');assert.match(filter,/^\(status\.neq\.created,created_at\.gte\./);
+  const cutoff=Date.parse(filter.match(/created_at\.gte\.(.*)\)$/)[1]);assert(Math.abs(cutoff-(now-3*3600000))<1000);
+  assert.equal(url.searchParams.get('limit'),'100');
+  return Response.json(rows.filter(o=>o.status!=='created'||Date.parse(o.created_at)>=cutoff));
+ };
+ const result=await adminWorkflow('admin-list',{},cookie);
+ assert.deepEqual(result.orders.map(o=>o.id),['recent','paid','review']);
+});
 test.after(()=>{global.fetch=originalFetch;nodemailer.createTransport=originalTransport;});

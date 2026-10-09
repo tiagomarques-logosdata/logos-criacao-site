@@ -48,7 +48,10 @@ export async function adminWorkflow(action,input,headers) {
   const token=await session(headers);
   if(action==='admin-logout'){await db(`logos_admin_sessions?token_hash=eq.${hashToken(token)}`,{method:'DELETE'});return {ok:true,__cookie:'logos_admin=; Path=/api/workflow; HttpOnly; Secure; SameSite=Strict; Max-Age=0'};}
   if(action==='admin-list') {
-    const rows=await db('logos_orders?select=id,name,email,status,revision,created_at,briefing,transaction_nsu&order=created_at.desc&limit=100');
+    const cutoff=new Date(Date.now()-3*60*60*1000).toISOString();
+    // Filter before limiting rows; a late payment still follows the normal flow.
+    const visible=encodeURIComponent(`(status.neq.created,created_at.gte.${cutoff})`);
+    const rows=await db(`logos_orders?select=id,name,email,status,revision,created_at,briefing,transaction_nsu&or=${visible}&order=created_at.desc&limit=100`);
     return {orders:rows.map(o=>({...clean(o),briefing:undefined,company:o.briefing?.answers?.empresa||o.name}))};
   }
   if(!validId(input.id))throw new HttpError(400,'Pedido inválido.');
