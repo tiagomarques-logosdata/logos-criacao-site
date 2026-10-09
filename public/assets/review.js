@@ -24,4 +24,4 @@ $('#admin-filter').addEventListener('change',renderOrders);$('#admin-refresh').a
 window.addEventListener('beforeunload',e=>{if(dirty){e.preventDefault();e.returnValue='';}});
 try{if(access)await api('redeem',{token:access});await refresh();}catch(e){status(e.message);}
 
-setInterval(()=>{if(!document.hidden&&!#admin-app.hidden&&!dirty&&!busy)refresh(true).catch(e=>status(e.message));},30000);
+setInterval(()=>{if(!document.hidden&&!$('#admin-app').hidden&&!dirty&&!busy)refresh(true).catch(e=>status(e.message));},30000);
