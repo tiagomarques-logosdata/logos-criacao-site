@@ -19,6 +19,7 @@ export default async function handler(req, res) {
     if (typeof body === 'string') { try { body = JSON.parse(body); } catch { throw new HttpError(400, 'JSON inválido.'); } }
     if (body && Buffer.byteLength(JSON.stringify(body)) > 500000) throw new HttpError(413, 'Documento muito grande.');
     const result = await workflow(action, body || {}, req.headers);
+    if (result.__cookie) { res.setHeader('Set-Cookie', result.__cookie); delete result.__cookie; }
     res.statusCode = 200; res.end(JSON.stringify(result));
   } catch (error) {
     const action = new URL(req.url, 'http://localhost').searchParams.get('action');

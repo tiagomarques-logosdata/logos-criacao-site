@@ -20,7 +20,7 @@ createServer(async (req, res) => {
     if (!file.startsWith(dist)) { res.writeHead(403); res.end(); return; }
     res.setHeader('Content-Type', extname(file) === '.mjs' ? 'text/javascript; charset=utf-8' : types[extname(file)] || 'application/octet-stream');
     res.setHeader('X-Content-Type-Options', 'nosniff');
-    const privatePage = ['/briefing/', '/contratar/', '/pagamento/'].includes(url.pathname);
+    const privatePage = ['/briefing/', '/contratar/', '/pagamento/', '/painel/'].includes(url.pathname);
     res.setHeader('Referrer-Policy', privatePage ? 'no-referrer' : 'strict-origin-when-cross-origin');
     if (privatePage) res.setHeader('Cache-Control', 'no-store');
     res.setHeader('Content-Security-Policy', adsHead

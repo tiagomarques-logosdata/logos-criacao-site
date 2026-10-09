@@ -1,8 +1,9 @@
 {
   "type": "object",
   "additionalProperties": false,
-  "required": ["projectName", "summary", "sitemap", "designPlan", "contentPlan", "functionalityPlan", "seoPlan", "missingInformation", "outOfScope", "needsReview", "codexPrompt"],
+  "required": ["projectName", "summary", "sitemap", "designPlan", "contentPlan", "functionalityPlan", "seoPlan", "missingInformation", "outOfScope", "needsReview", "codexPrompt", "reviewFields"],
   "properties": {
+    "reviewFields": {"type":"array","items":{"type":"object","additionalProperties":false,"required":["fieldId","reason"],"properties":{"fieldId":{"type":"string"},"reason":{"type":"string"}}}},
     "projectName": { "type": "string" },
     "summary": { "type": "string" },
     "sitemap": { "type": "array", "items": { "type": "object", "additionalProperties": false, "required": ["route", "title", "sections"], "properties": { "route": { "type": "string" }, "title": { "type": "string" }, "sections": { "type": "array", "items": { "type": "string" } } } } },

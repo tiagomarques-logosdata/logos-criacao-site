@@ -1,5 +1,6 @@
 import { createHash, createHmac, randomUUID, timingSafeEqual } from 'node:crypto';
 import { normalizeAnswers, schemaVersion } from '../public/assets/briefing-schema.mjs';
+import { adminWorkflow, notifyReview } from './review.mjs';
 
 export class HttpError extends Error { constructor(status, message) { super(message); this.status = status; } }
 const required = name => { const value = process.env[name]; if (!value) throw new HttpError(503, 'A integração ainda está em configuração.'); return value; };
@@ -49,7 +50,7 @@ export function authenticateWorker(headers) {
   const a = Buffer.from(incoming), b = Buffer.from(expected);
   if (a.length !== b.length || !timingSafeEqual(a, b)) throw new HttpError(401, 'Acesso não autorizado.');
 }
-async function mailTransport() {
+export async function mailTransport() {
   const { default: nodemailer } = await import('nodemailer');
   return nodemailer.createTransport({ host: 'smtp.gmail.com', port: 465, secure: true,
     auth: { user: required('SMTP_USER'), pass: required('SMTP_APP_PASSWORD').replace(/\s+/g, '') },
@@ -116,6 +117,7 @@ export async function submitBriefing(input, headers) {
   return { accepted: true, alreadySubmitted: !rows?.length };
 }
 export async function workflow(action, input, headers = {}) {
+  if (action?.startsWith('admin-')) return adminWorkflow(action, input, headers);
   if (action === 'checkout') return createCheckout(input);
   if (action === 'confirm' || action === 'webhook') return confirmPayment(input);
   if (action === 'access') { const order = await authenticatedOrder(headers); return { submitted: !!order.briefing }; }
@@ -165,12 +167,15 @@ export async function workflow(action, input, headers = {}) {
     if (analysis && (typeof analysis !== 'object' || JSON.stringify(analysis).length > 200000)) throw new HttpError(400, 'Análise inválida.');
     const rows = await db(`logos_orders?id=eq.${input.id}&lease=eq.${input.lease}&status=eq.processing`, { method: 'PATCH', prefer: 'return=representation', body: { status: input.status, analysis: analysis || null, result_note: String(input.note || '').slice(0, 2000), finished_at: new Date().toISOString() } });
     if (!rows?.length) throw new HttpError(409, 'Esse trabalho não pertence mais a esta execução.');
+    if (input.status === 'needs_review') await notifyReview(rows[0]).catch(() => {});
     return { accepted: true };
   }
   if (action === 'retry-emails') {
     const rows = await db('logos_orders?paid_at=not.is.null&email_sent_at=is.null&limit=10');
     for (const order of rows) await sendBriefingEmail(order);
-    return { attempted: rows.length };
+    const reviews = await db('logos_orders?status=eq.needs_review&review_email_sent_at=is.null&limit=10');
+    for (const order of reviews) await notifyReview(order);
+    return { attempted: rows.length, reviews: reviews.length };
   }
   throw new HttpError(404, 'Operação não encontrada.');
 }

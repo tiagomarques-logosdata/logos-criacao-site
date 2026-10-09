@@ -10,7 +10,7 @@ const footer = () => `<footer><div class="container"><div class="footer-top"><a 
 const final = () => `<section class="dark final"><div class="container final-inner"><div>${title('Vamos construir', 'Tem uma ideia de site ou loja virtual?', 'Conte o que você precisa. Avaliamos o projeto e indicamos a melhor forma de construir.')}<div class="actions">${button('Solicitar orçamento', '/desenvolvimento-de-sites/#orcamento')}${button('Falar no WhatsApp', wa(), true)}</div><p class="small muted">Orçamento inicial sem compromisso.</p></div></div></section>`;
 export function layout(path, pageTitle, description, body, service = false) {
   const canonical = `${site.origin}${path}`;
-  const privatePage = ['/briefing/', '/contratar/', '/pagamento/'].includes(path);
+  const privatePage = ['/briefing/', '/contratar/', '/pagamento/', '/painel/'].includes(path);
   const tags = privatePage ? '<meta name="robots" content="noindex,nofollow"><meta name="referrer" content="no-referrer">' : adsHead;
   const schema = [{ '@context': 'https://schema.org', '@type': 'Organization', name: site.name, url: site.origin, telephone: `+${site.whatsapp}` }];
   if (service) schema.push({ '@context': 'https://schema.org', '@type': 'Service', name: pageTitle.split(' | ')[0], serviceType: 'Desenvolvimento de sites e e-commerce', provider: { '@type': 'Organization', name: site.name, url: site.origin }, url: canonical, areaServed: { '@type': 'Country', name: 'Brasil' } });
