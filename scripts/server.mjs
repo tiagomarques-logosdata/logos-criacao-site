@@ -12,6 +12,7 @@ createServer(async (req, res) => {
   try {
     const url = new URL(req.url, 'http://localhost');
     const path = decodeURIComponent(url.pathname);
+    if(['/contratar/', '/pagamento/'].includes(path)){res.writeHead(301,{Location:'/desenvolvimento-de-sites/#orcamento'});res.end();return;}
     if (path === '/api/workflow') { await workflowHandler(req, res); return; }
     let file = resolve(dist, `.${path}`);
     if (!file.startsWith(dist) && file !== dist.slice(0, -1)) { res.writeHead(403); res.end(); return; }

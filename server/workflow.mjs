@@ -1,6 +1,7 @@
 import { createHash, createHmac, randomUUID, timingSafeEqual } from 'node:crypto';
 import { normalizeAnswers, schemaVersion } from '../public/assets/briefing-schema.mjs';
-import { adminWorkflow, notifyReview } from './review.mjs';
+import { approvedBuildJob } from '../automation/workflow-rules.mjs';
+import { adminWorkflow, notifyReview, notifyBriefing } from './review.mjs';
 
 export class HttpError extends Error { constructor(status, message) { super(message); this.status = status; } }
 const required = name => { const value = process.env[name]; if (!value) throw new HttpError(503, 'A integração ainda está em configuração.'); return value; };
@@ -56,7 +57,7 @@ export async function mailTransport() {
     auth: { user: required('SMTP_USER'), pass: required('SMTP_APP_PASSWORD').replace(/\s+/g, '') },
     connectionTimeout: 10000, greetingTimeout: 10000, socketTimeout: 20000 });
 }
-async function sendBriefingEmail(order) {
+export async function sendBriefingEmail(order) {
   if (order.email_sent_at) return;
   const claims = await db('rpc/logos_claim_email', { method: 'POST', body: { p_id: order.id } });
   if (!claims?.length) return;
@@ -67,30 +68,13 @@ async function sendBriefingEmail(order) {
     const isTest = order.transaction_nsu === `TESTE:${order.id}`;
     await transport.sendMail({ from: `Logos Data <${user}>`, to: order.email,
       messageId: `<briefing-${order.id}@${new URL(origin()).hostname}>`,
-      subject: isTest ? '[TESTE SEM COBRANÇA] Formulário para criação do site' : 'Seu pagamento foi confirmado — vamos criar seu site',
-      text: `Olá, ${order.name}!\n\n${isTest ? 'Este é um pedido de teste. Nenhum pagamento foi realizado. Ao enviar o formulário, o time da Logos Data dará continuidade à preparação do seu site.' : 'Seu pagamento foi confirmado. Agora queremos conhecer sua empresa e o site que você deseja.'}\n\nPreencha seu formulário individual:\n${link}\n\nSepare sua logo, textos, imagens e referências. Você pode salvar um rascunho no seu dispositivo. O link é válido por 30 dias e deve ser mantido privado.\n\nSuas respostas serão analisadas pelo time da Logos Data para preparar o desenvolvimento do seu site. Não envie senhas ou dados de cartão.\n\nLogos Data\nWhatsApp: (11) 98319-5720` });
+      subject: isTest ? '[TESTE SEM COBRANÇA] Formulário para criação do site' : 'Vamos organizar o briefing do seu projeto',
+      text: `Olá, ${order.name}!\n\n${isTest ? 'Este é um pedido de teste. Nenhum pagamento foi realizado. Ao enviar o formulário, o time da Logos Data dará continuidade à preparação do seu site.' : 'Sua contratação foi confirmada pela Logos Data. Agora queremos conhecer sua empresa e o projeto que você deseja. O escopo e o prazo seguem a proposta combinada com nosso time.'}\n\nPreencha seu formulário individual:\n${link}\n\nSepare sua logo, textos, imagens e referências. Você pode salvar um rascunho no seu dispositivo. O link é válido por 30 dias e deve ser mantido privado.\n\nSuas respostas serão analisadas pelo time da Logos Data para preparar o desenvolvimento do seu site. Não envie senhas ou dados de cartão.\n\nLogos Data\nWhatsApp: (11) 98319-5720` });
     await db(`logos_orders?id=eq.${order.id}`, { method: 'PATCH', body: { email_sent_at: new Date().toISOString(), email_claimed_at: null } });
   } catch (error) {
     await db(`logos_orders?id=eq.${order.id}`, { method: 'PATCH', body: { email_claimed_at: null } }).catch(() => {});
     throw new HttpError(502, 'Pagamento confirmado. O envio do formulário será tentado novamente.');
   }
-}
-export async function createCheckout(input) {
-  enabled();
-  required('SMTP_USER'); required('SMTP_APP_PASSWORD'); required('BRIEFING_TOKEN_SECRET');
-  const name = typeof input.name === 'string' ? input.name.trim() : '';
-  const email = typeof input.email === 'string' ? input.email.trim().toLowerCase() : '';
-  if (!shortString(name, 120) || !shortString(email, 160) || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new HttpError(400, 'Confira seu nome e e-mail.');
-  const id = randomUUID();
-  const created = await db('rpc/logos_create_order', { method: 'POST', body: { p_id: id, p_name: name, p_email: email, p_token_hash: hashToken(tokenForOrder(id)) } });
-  if (!created?.length) throw new HttpError(429, 'Muitas tentativas de contratação. Aguarde ou fale com a Logos Data.');
-  const result = await infinite('links', { handle: process.env.INFINITEPAY_HANDLE || 'engdados-me', order_nsu: id,
-    redirect_url: `${origin()}/pagamento/`, webhook_url: `${origin()}/api/workflow?action=webhook`,
-    items: [{ quantity: 1, price: 100000, description: 'Criação de site profissional — Logos Data · entrega em 14 dias' }], customer: { name, email } });
-  const url = new URL(result.url);
-  if (url.protocol !== 'https:' || !['checkout.infinitepay.com.br', 'checkout.infinitepay.io'].includes(url.hostname)) throw new HttpError(502, 'A InfinitePay retornou um destino inválido.');
-  await db(`logos_orders?id=eq.${id}`, { method: 'PATCH', body: { checkout_url: url.href } });
-  return { url: url.href };
 }
 export async function confirmPayment(input) {
   enabled();
@@ -114,11 +98,12 @@ export async function submitBriefing(input, headers) {
   let answers;
   try { answers = normalizeAnswers(input.answers); } catch (error) { throw new HttpError(400, error.message); }
   const rows = await db(`logos_orders?id=eq.${order.id}&briefing=is.null`, { method: 'PATCH', prefer: 'return=representation', body: { briefing: { schemaVersion, answers }, submitted_at: new Date().toISOString(), status: 'queued' } });
+  if(rows?.[0])await notifyBriefing(rows[0]).catch(()=>{});
   return { accepted: true, alreadySubmitted: !rows?.length };
 }
 export async function workflow(action, input, headers = {}) {
   if (action?.startsWith('admin-')) return adminWorkflow(action, input, headers);
-  if (action === 'checkout') return createCheckout(input);
+  if (action === 'checkout') throw new HttpError(410, 'O pagamento direto foi encerrado. Converse com a Logos Data para definir seu projeto.');
   if (action === 'confirm' || action === 'webhook') return confirmPayment(input);
   if (action === 'access') { const order = await authenticatedOrder(headers); return { submitted: !!order.briefing }; }
   if (action === 'briefing') return submitBriefing(input, headers);
@@ -157,23 +142,28 @@ export async function workflow(action, input, headers = {}) {
   if (action === 'claim') {
     const rows = await db('rpc/logos_claim_job', { method: 'POST', body: { p_worker: 'codex-local' } });
     const job = rows?.[0];
-    return { job: job ? { id: job.id, lease: job.lease, briefing: job.briefing, amount: job.amount } : null };
+    return { job: job ? { id: job.id, lease: job.lease, briefing: job.briefing, revision: job.revision, analysis: job.analysis, agreedScope: job.agreed_scope, agreedDeadline: job.agreed_deadline } : null };
   }
   if (action === 'result') {
     if (!uuid(input.id) || !uuid(input.lease)) throw new HttpError(400, 'Identificador inválido.');
     const allowed = ['needs_review', 'completed', 'failed'];
     if (!allowed.includes(input.status)) throw new HttpError(400, 'Status inválido.');
-    const analysis = input.analysis;
+    const current=await orderById(input.id);
+    if(input.status==='completed'&&!approvedBuildJob(current))throw new HttpError(409,'A construção precisa de aprovação humana para esta revisão.');
+    const analysis = input.status==='completed'?current.analysis:input.analysis;
+    if(input.status!=='completed'&&analysis)delete analysis.approval;
     if (analysis && (typeof analysis !== 'object' || JSON.stringify(analysis).length > 200000)) throw new HttpError(400, 'Análise inválida.');
-    const rows = await db(`logos_orders?id=eq.${input.id}&lease=eq.${input.lease}&status=eq.processing`, { method: 'PATCH', prefer: 'return=representation', body: { status: input.status, analysis: analysis || null, result_note: String(input.note || '').slice(0, 2000), finished_at: new Date().toISOString() } });
+    const rows = await db(`logos_orders?id=eq.${input.id}&lease=eq.${input.lease}&status=eq.processing`, { method: 'PATCH', prefer: 'return=representation', body: { status: input.status, analysis: analysis || null, result_note: String(input.note || '').slice(0, 2000), finished_at: new Date().toISOString(), review_email_sent_at:null, review_email_claimed_at:null } });
     if (!rows?.length) throw new HttpError(409, 'Esse trabalho não pertence mais a esta execução.');
-    if (input.status === 'needs_review') await notifyReview(rows[0]).catch(() => {});
+    if (['needs_review','completed'].includes(input.status)) await notifyReview(rows[0]).catch(() => {});
     return { accepted: true };
   }
   if (action === 'retry-emails') {
     const rows = await db('logos_orders?paid_at=not.is.null&email_sent_at=is.null&limit=10');
     for (const order of rows) await sendBriefingEmail(order);
-    const reviews = await db('logos_orders?status=eq.needs_review&review_email_sent_at=is.null&limit=10');
+    const notices=await db('logos_orders?briefing=not.is.null&briefing_notice_at=is.null&limit=10');
+    for(const order of notices)await notifyBriefing(order);
+    const reviews = await db('logos_orders?status=in.(needs_review,completed)&review_email_sent_at=is.null&limit=10');
     for (const order of reviews) await notifyReview(order);
     return { attempted: rows.length, reviews: reviews.length };
   }

@@ -75,5 +75,17 @@
         }
       ]
     }
+  ],
+  "redirects": [
+    {
+      "source": "/contratar/:path*",
+      "destination": "/desenvolvimento-de-sites/#orcamento",
+      "permanent": true
+    },
+    {
+      "source": "/pagamento/:path*",
+      "destination": "/desenvolvimento-de-sites/#orcamento",
+      "permanent": true
+    }
   ]
 }

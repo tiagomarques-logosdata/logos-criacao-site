@@ -1,0 +1,11 @@
+# Contratação e construção com aprovação
+
+1. O site convida para conversar sobre o projeto pelo WhatsApp. Escopo, investimento e prazo são combinados em proposta específica, sem preço padrão, promessa de entrega genérica ou checkout direto. SaaS, lojas e integrações exigem avaliação própria.
+2. Após confirmar a contratação e o pagamento combinado, o responsável autenticado abre "Enviar briefing para um cliente contratado" no painel, registra nome, e-mail, escopo e prazo e envia o formulário individual. O banco preserva os pedidos anteriores; os novos registros manuais não têm valor padrão associado.
+3. O envio do formulário avisa o responsável por e-mail. A EC2 organiza as respostas, aponta pendências e prepara o prompt. Mesmo uma análise sem pendências sempre termina em revisão, sem construir automaticamente.
+4. No painel, o responsável confere o prompt, esclarece pendências, reanalisa quando necessário e registra o escopo e o prazo aprovados. "Aprovar e iniciar construção" libera apenas esta revisão e este conteúdo. Alterar qualquer resposta invalida a análise e a aprovação anterior. A aprovação é registrada no histórico, com autor e horário.
+5. O Codex constrói a primeira versão e avisa o responsável. Ela permanece na pasta do projeto na EC2 para revisão. Não há deploy, publicação ou envio de site ao cliente automático. Correções podem ser registradas no briefing e seguir nova análise e nova aprovação.
+
+Segurança: senha e TOTP continuam obrigatórios no painel. A API rejeita conclusão de construção sem aprovação persistida. O executor recebe um snapshot do plano aprovado e confere revisão e fingerprint antes da construção. Contas de clientes não podem autorizar trabalhos. O checkout público retorna 410 e as antigas páginas de contratação/pagamento redirecionam para a conversa sobre o projeto. A confirmação de transações antigas permanece disponível somente para honrar pedidos anteriores.
+
+CTA: "Conversar sobre meu projeto", acompanhado de "Conversa inicial sem compromisso". A escolha aplica clareza, descrição fiel da ação e um objetivo principal. Nenhum texto garante conversão: o desempenho depende de tráfego, oferta e testes. Referências: https://www.nngroup.com/articles/ui-copy/ e https://unbounce.com/landing-page-articles/what-is-a-cta/

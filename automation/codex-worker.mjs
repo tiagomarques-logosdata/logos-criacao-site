@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { spawn } from 'node:child_process';
 import { normalizeAnswers } from '../public/assets/briefing-schema.mjs';
 import { analysisPrompt, validateAnalysis, buildPrompt } from './prompts.mjs';
+import { approvedBuildJob } from './workflow-rules.mjs';
 const root = fileURLToPath(new URL('../', import.meta.url));
 const projects = resolve(process.env.CODEX_PROJECTS_DIR || join(root, '../../outputs/sites-clientes'));
 const once = process.argv.includes('--once');
@@ -53,21 +54,21 @@ async function processJob(job) {
   if (!folder.startsWith(projects + sep)) throw new Error('Destino de projeto inválido.');
   let analysis;
   try {
-    const briefing = { ...job.briefing, answers: normalizeAnswers(job.briefing.answers) };
+    const briefing = { ...job.briefing, contract: { scope: job.agreedScope||null, deadline: job.agreedDeadline||null }, answers: normalizeAnswers(job.briefing.answers) };
     await mkdir(folder, { recursive: true });
     await writeFile(join(folder, 'briefing.json'), JSON.stringify(briefing, null, 2));
     await writeFile(join(folder, 'AGENTS.md'), '# Regras da Logos Data\n\n' + (await import('./prompts.mjs')).buildRules);
-    await runCodex(folder, analysisPrompt(briefing), 'analysis');
-    analysis = validateAnalysis(JSON.parse(await readFile(join(folder, 'analysis.json'), 'utf8')));
-    if (['Loja virtual', 'Aplicação ou portal'].includes(briefing.answers.tipo)) {
-      analysis.needsReview = true;
-      if (!analysis.outOfScope.length) analysis.outOfScope.push('Tipo de projeto exige revisão de escopo.');
+    if (!approvedBuildJob(job)) {
+      await runCodex(folder, analysisPrompt(briefing), 'analysis');
+      analysis = validateAnalysis(JSON.parse(await readFile(join(folder, 'analysis.json'), 'utf8')));
+      delete analysis.approval;
+      await writeFile(join(folder, 'prompt-codex.md'), buildPrompt(analysis));
+      await api('result', { id: job.id, lease: job.lease, status: 'needs_review', analysis, note: 'Análise e prompt preparados. A construção aguarda aprovação do escopo e do prompt pela Logos Data.' });
+      console.log(`Projeto ${job.id}: análise pronta, aguardando aprovação humana.`); return;
     }
+    analysis = validateAnalysis(job.analysis);
+    await writeFile(join(folder, 'analysis.json'), JSON.stringify(analysis,null,2));
     await writeFile(join(folder, 'prompt-codex.md'), buildPrompt(analysis));
-    if (analysis.needsReview || analysis.outOfScope.length || analysis.missingInformation.length) {
-      await api('result', { id: job.id, lease: job.lease, status: 'needs_review', analysis, note: 'Briefing analisado. Revise pendências e escopo antes do desenvolvimento.' });
-      console.log(`Projeto ${job.id}: pendências para revisão.`); return;
-    }
     await runCodex(folder, buildPrompt(analysis), 'build');
     await api('result', { id: job.id, lease: job.lease, status: 'completed', analysis, note: 'Primeira versão criada pelo Codex; revisão da Logos Data necessária antes de publicar.' });
     console.log(`Projeto ${job.id}: primeira versão em ${folder}.`);

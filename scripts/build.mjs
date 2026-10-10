@@ -1,7 +1,7 @@
 import { mkdir, rm, writeFile, cp } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { resolve, join } from 'node:path';
-import { briefingPage, checkoutPage, paymentReturnPage } from '../src/briefing.mjs';
+import { briefingPage } from '../src/briefing.mjs';
 import { reviewPage } from '../src/review.mjs';
 import { site, services } from '../src/site.mjs';
 import { layout, webPage, homePage, servicePage, aboutPage, portfolioPage } from '../src/templates.mjs';
@@ -14,10 +14,8 @@ await cp(join(root, 'public'), dist, { recursive: true });
 export const pages = [
   ['/painel/', 'Painel privado | Logos Data', 'Área privada de revisão de pedidos da Logos Data.', reviewPage()],
   ['/briefing/', 'Briefing do seu site | Logos Data', 'Formulário para organizar as informações do seu site.', briefingPage()],
-  ['/contratar/', 'Contratar meu site | Logos Data', 'Contratação de site profissional com pagamento pela InfinitePay.', checkoutPage()],
-  ['/pagamento/', 'Confirmação do pagamento | Logos Data', 'Confirmação do pagamento do seu site.', paymentReturnPage()],
   ['/', 'Logos Data | Sites, E-commerce, Dados e Automação', 'Sites, lojas virtuais e aplicações web com integrações. Engenharia de dados, automação, business intelligence e inteligência artificial para negócios.', homePage()],
-  ['/desenvolvimento-de-sites/', 'Site profissional por R$1.000 | Logos Data', 'Criação de site profissional por R$1.000. Atendimento em todo o Brasil. Fale diretamente com a Logos Data.', webPage(), true],
+  ['/desenvolvimento-de-sites/', 'Criação de sites profissionais | Logos Data', 'Sites profissionais planejados para sua empresa. Atendimento em todo o Brasil. Converse sobre seu projeto com a Logos Data.', webPage(), true],
   ['/portfolio/', 'Portfólio | Logos Data', 'Conheça possibilidades de sites, e-commerce, dados, automação e integrações. Projetos demonstrativos são identificados claramente.', portfolioPage()],
   ['/sobre/', 'Sobre a Logos Data | Tecnologia para negócios', 'Conheça a Logos Data e Tiago Marques Pereira. Desenvolvimento web, engenharia de dados, automação e inteligência artificial para empresas.', aboutPage()],
   ...services.map(s => [`/${s.slug}/`, `${s.name} | Logos Data`, s.text, servicePage(s)]),
