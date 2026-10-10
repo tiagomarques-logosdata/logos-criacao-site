@@ -11,6 +11,11 @@ if (dist !== join(root, 'dist')) throw new Error('Invalid build output');
 await rm(dist, { recursive: true, force: true });
 await mkdir(dist, { recursive: true });
 await cp(join(root, 'public'), dist, { recursive: true });
+// Static directory URLs with trailing slashes need a fallback as well as Vercel redirects.
+for (const legacy of ['contratar','pagamento']) {
+  await mkdir(join(dist,legacy),{recursive:true});
+  await writeFile(join(dist,legacy,'index.html'),`<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><meta http-equiv="refresh" content="0;url=/desenvolvimento-de-sites/#orcamento"><link rel="canonical" href="${site.origin}/desenvolvimento-de-sites/"><title>Converse sobre seu projeto | Logos Data</title></head><body><h1>Vamos conversar sobre seu projeto.</h1><a href="/desenvolvimento-de-sites/#orcamento">Conversar sobre meu projeto</a></body></html>`);
+}
 export const pages = [
   ['/painel/', 'Painel privado | Logos Data', 'Área privada de revisão de pedidos da Logos Data.', reviewPage()],
   ['/briefing/', 'Briefing do seu site | Logos Data', 'Formulário para organizar as informações do seu site.', briefingPage()],
