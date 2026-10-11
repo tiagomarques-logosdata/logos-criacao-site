@@ -1,6 +1,13 @@
 {
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
+  "rewrites": [
+    {
+      "source": "/",
+      "has": [{ "type": "host", "value": "clinicaplena.logosdata.com.br" }],
+      "destination": "/clinica-plena/"
+    }
+  ],
   "functions": {
     "api/workflow.mjs": {
       "maxDuration": 60
