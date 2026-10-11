@@ -21,7 +21,7 @@ export const pages = [
   ['/briefing/', 'Briefing do seu site | Logos Data', 'Formulário para organizar as informações do seu site.', briefingPage()],
   ['/', 'Logos Data | Sites, E-commerce, Dados e Automação', 'Sites, lojas virtuais e aplicações web com integrações. Engenharia de dados, automação, business intelligence e inteligência artificial para negócios.', homePage()],
   ['/desenvolvimento-de-sites/', 'Criação de sites profissionais | Logos Data', 'Sites profissionais planejados para sua empresa. Atendimento em todo o Brasil. Converse sobre seu projeto com a Logos Data.', webPage(), true],
-  ['/portfolio/', 'Portfólio | Logos Data', 'Conheça possibilidades de sites, e-commerce, dados, automação e integrações. Projetos demonstrativos são identificados claramente.', portfolioPage()],
+  ['/portfolio/', 'Portfólio | Logos Data', 'Conheça o portfólio de design e desenvolvimento de sites da Logos Data.', portfolioPage()],
   ['/sobre/', 'Sobre a Logos Data | Tecnologia para negócios', 'Conheça a Logos Data e Tiago Marques Pereira. Desenvolvimento web, engenharia de dados, automação e inteligência artificial para empresas.', aboutPage()],
   ...services.map(s => [`/${s.slug}/`, `${s.name} | Logos Data`, s.text, servicePage(s)]),
 ];
