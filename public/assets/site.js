@@ -112,3 +112,21 @@ document.querySelectorAll('[data-filter]').forEach(button => {
     document.querySelector('#portfolio-empty').hidden = visible > 0;
   });
 });
+
+document.querySelectorAll('[data-plena-view]').forEach(button => {
+  button.addEventListener('click', () => {
+    const mobile = button.dataset.plenaView === 'mobile';
+    document.querySelectorAll('[data-plena-view]').forEach(other => {
+      other.setAttribute('aria-pressed', String(other === button));
+    });
+    const image = document.querySelector('#plena-preview-image');
+    image.src = `/clinica-plena/assets/preview-${mobile ? 'mobile' : 'desktop'}.png`;
+    image.alt = `Prévia real da página inicial da Clínica Plena no ${mobile ? 'celular' : 'computador'}`;
+    image.width = mobile ? 390 : 1265;
+    image.height = mobile ? 844 : 720;
+    document.querySelector('#plena-preview-frame').classList.toggle('mobile', mobile);
+    document.querySelector('#plena-preview-caption').textContent = mobile
+      ? 'Veja como o conteúdo se adapta ao celular. Abra o site para navegar.'
+      : 'Uma prévia do projeto. Abra o site para explorar todas as seções.';
+  });
+});
