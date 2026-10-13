@@ -2,12 +2,13 @@ import {sections,activeSections} from './briefing-schema.mjs';
 const $=s=>document.querySelector(s);
 const labels={created:'Aguardando pagamento',paid:'Aguardando briefing',queued:'Na fila',processing:'Em análise ou construção',needs_review:'Aguardando sua revisão',completed:'Pronto para conferir',failed:'Falha'};
 const params=new URLSearchParams(location.hash.slice(1));let selected=params.get('pedido'),orders=[],leads=[],current=null,dirty=false,busy=false;
+let adminView=selected?'briefing':'contacts';
 const setupToken=params.get('configurar'),setupType=params.get('tipo');let factorId=null,recovering=false;history.replaceState(null,'',location.pathname);
 const status=text=>{$('#admin-status').textContent=text;};
 function element(tag,text,cls){const e=document.createElement(tag);if(text!==undefined)e.textContent=text;if(cls)e.className=cls;return e;}
 async function api(action,body={}){const r=await fetch(`/api/workflow?action=admin-${action}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});const data=await r.json();if(!r.ok){if(r.status===401){showAuth('admin-login');}throw Error(data.error||'Não foi possível concluir.');}return data;}
 function renderOrders(){const target=$('#admin-orders');target.replaceChildren();const filter=$('#admin-filter').value;const shown=orders.filter(o=>filter==='all'||o.status===filter);if(!shown.length)target.append(element('p','Nenhum pedido nesta etapa.'));for(const o of shown){const b=element('button',undefined,'admin-order');b.type='button';b.setAttribute('aria-pressed',String(o.id===selected));b.append(element('strong',o.company),element('span',labels[o.status]||o.status),element('small',o.test?'Pedido de teste':o.email));b.addEventListener('click',()=>open(o.id).catch(e=>status(e.message)));target.append(b);}}
-async function refresh(silent=false){if(dirty&&!confirm('Descartar alterações ainda não salvas?'))return;const [orderData,leadData]=await Promise.all([api('list'),api('leads')]);const fetched=orderData.orders;if(silent&&(dirty||busy))return;orders=fetched;leads=leadData.leads;showAuth('admin-app');renderLeads();renderOrders();if(selected&&orders.some(o=>o.id===selected))await open(selected,true,silent);else if(selected){selected=null;current=null;dirty=false;$('#admin-detail').replaceChildren(element('p','Selecione um pedido para ver o briefing.'));renderOrders();}if(!silent)status('Contatos e pedidos atualizados.');}
+async function refresh(silent=false){if(dirty&&!confirm('Descartar alterações ainda não salvas?'))return;const [orderData,leadData]=await Promise.all([api('list'),api('leads')]);const fetched=orderData.orders;if(silent&&(dirty||busy))return;orders=fetched;leads=leadData.leads;showAuth('admin-app');renderLeads();renderOrders();renderAdminView();if(selected&&orders.some(o=>o.id===selected))await open(selected,true,silent);else if(selected){selected=null;current=null;dirty=false;$('#admin-detail').replaceChildren(element('p','Selecione um pedido para ver o briefing.'));renderOrders();}if(!silent)status('Contatos e pedidos atualizados.');}
 function issues(order){if(Array.isArray(order.analysis?.reviewFields))return order.analysis.reviewFields.map(x=>({...x,suggested:false}));const rules={logo:/logo|identidade visual/i,imagens:/imagens|materiais autorizados/i,whatsappPublico:/WhatsApp|canal.*atendid/i,paginas:/páginas|Serviços.*Projetos/i,idiomas:/idioma/i,descricao:/finalidade|contradição.*institucional|conversão eleitoral/i,publico:/eleitor|voto anterior/i,dominio:/domínio|hospedagem/i,legal:/textos legais/i,aprovador:/aprovador/i,headline:/número eleitoral|headline/i,sobre:/trajetória|textos factuais/i};return (order.analysis?.missingInformation||[]).flatMap(reason=>Object.entries(rules).filter(([,r])=>r.test(reason)).map(([fieldId])=>({fieldId,reason,suggested:true})));}
 async function open(id,discard=false,background=false){if(dirty&&!discard&&!confirm('Descartar alterações ainda não salvas?'))return;const data=await api('detail',{id});if(background&&(dirty||busy))return;current=data.order;selected=id;dirty=false;renderOrders();renderDetail(data);}
 function renderDetail(data){const o=data.order,target=$('#admin-detail');target.replaceChildren();target.append(element('h2',o.briefing?.answers?.empresa||o.name),element('p',`${labels[o.status]||o.status}${o.test?' · Teste sem cobrança':''}`));const contact=element('a',`E-mail do cliente: ${o.email}`);contact.href=`mailto:${o.email}`;target.append(contact);const phone=String(o.briefing?.answers?.whatsappPublico||'').replace(/\D/g,'');if(/^(?:55)?\d{10,11}$/.test(phone)){const a=element('a','Abrir contato no WhatsApp','admin-contact');a.href=`https://wa.me/${phone.startsWith('55')?phone:'55'+phone}`;a.target='_blank';a.rel='noopener noreferrer';target.append(a);}
@@ -49,7 +50,30 @@ function renderLeads(){
   const message='Olá, '+lead.name+'! Aqui é o Tiago, da Logos Data. Recebi seu contato pelo nosso site. Você quer criar um site novo ou melhorar um que já existe?';
   const link=element('a','Conversar no WhatsApp ↗','button');link.href='https://wa.me/'+lead.whatsapp+'?text='+encodeURIComponent(message);link.target='_blank';link.rel='noopener noreferrer';
   const mark=element('button',lead.contacted_at?'Marcar como pendente':'Marcar como contatado','button secondary');mark.type='button';
-  mark.addEventListener('click',async()=>{mark.disabled=true;try{await api('lead-contacted',{id:lead.id,contacted:!lead.contacted_at});lead.contacted_at=lead.contacted_at?null:new Date().toISOString();renderLeads();status('Status do contato atualizado.');}catch(e){status(e.message);mark.disabled=false;}});
+  mark.addEventListener('click',async()=>{mark.disabled=true;try{await api('lead-contacted',{id:lead.id,contacted:!lead.contacted_at});lead.contacted_at=lead.contacted_at?null:new Date().toISOString();renderLeads();renderAdminView();status('Status do contato atualizado.');}catch(e){status(e.message);mark.disabled=false;}});
   actions.append(link,mark);card.append(info,actions);target.append(card);
  }
 }
+
+function renderAdminView(){
+ for(const tab of document.querySelectorAll('[data-admin-view]')){
+  const active=tab.dataset.adminView===adminView;
+  tab.setAttribute('aria-selected',String(active));tab.tabIndex=active?0:-1;
+  $('#admin-view-'+tab.dataset.adminView).hidden=!active;
+ }
+ $('#admin-view-description').textContent=adminView==='contacts'?'Acompanhe os contatos recebidos pelo site.':'Gerencie formulários, respostas e revisões dos projetos.';
+ $('#admin-nav-contacts-count').textContent=leads.filter(l=>!l.contacted_at).length;
+ $('#admin-nav-briefing-count').textContent=orders.filter(o=>o.status==='needs_review').length;
+}
+const adminTabs=[...document.querySelectorAll('[data-admin-view]')];
+for(const tab of adminTabs){
+ tab.addEventListener('click',()=>{adminView=tab.dataset.adminView;renderAdminView();});
+ tab.addEventListener('keydown',event=>{
+  const index=adminTabs.indexOf(tab);let next;
+  if(['ArrowDown','ArrowRight'].includes(event.key))next=(index+1)%adminTabs.length;
+  if(['ArrowUp','ArrowLeft'].includes(event.key))next=(index+adminTabs.length-1)%adminTabs.length;
+  if(event.key==='Home')next=0;if(event.key==='End')next=adminTabs.length-1;
+  if(next!==undefined){event.preventDefault();adminTabs[next].click();adminTabs[next].focus();}
+ });
+}
+renderAdminView();
