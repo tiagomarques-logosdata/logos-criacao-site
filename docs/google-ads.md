@@ -1,10 +1,19 @@
-# Medição do WhatsApp
+# Google Ads e contatos
 
-A tag base `AW-18430684930` e o rótulo `SHVACLzk2e4cEILet9RE` estão configurados. Variáveis opcionais de build:
+A tag base usa AW-18430684930. A conversão primária do formulário usa NAVvCLL5xpsdEILet9RE (Contato recebido - Formulário).
 
-- `GOOGLE_ADS_ID`: opcional, substitui o ID da tag instalado.
-- `GOOGLE_ADS_CONVERSION_LABEL`: substitui o rótulo da ação de conversão de clique no WhatsApp.
+- GOOGLE_ADS_ID substitui o ID da tag base.
+- GOOGLE_ADS_LEAD_CONVERSION_LABEL substitui o rótulo do contato salvo. A variável antiga GOOGLE_ADS_CONVERSION_LABEL não é mais usada.
+- O evento dispara somente após a API confirmar o registro em logos_leads, com transaction_id igual ao UUID do registro. Nome e telefone não são enviados à tag.
+- Cliques em wa.me não disparam conversões. A ação histórica Clique no WhatsApp - Site fica secundária.
+- A conversão representa um contato recebido, ainda não um lead qualificado ou venda. A atribuição no Ads depende de interação elegível com o anúncio, consentimento/configuração do navegador e disponibilidade da tag.
 
-O evento usa valor 1 e moeda BRL, conforme o snippet fornecido. Esse valor não representa o preço do site. Mede a abertura do WhatsApp, não o envio de uma mensagem, um lead qualificado ou uma venda. Não envia nome, descrição do projeto, telefone, e-mail ou o endereço completo do link do WhatsApp ao Google. Links na mesma janela aguardam o callback por até um segundo; a navegação continua mesmo se a tag estiver bloqueada.
+## Banco e painel
 
-Depois da publicação, valide a tag e o evento no Tag Assistant usando os IDs reais. O servidor local permite os domínios necessários apenas quando a configuração está ativa.
+Aplicar docs/leads.sql no projeto Supabase antes do deploy. RLS bloqueia anon e authenticated; apenas o backend acessa a tabela. O painel continua exigindo a sessão do proprietário com senha e TOTP.
+
+O formulário exige nome, celular brasileiro com DDD e autorização de contato. Há limite transacional por telefone e hash do IP, honeypot e repetição segura por UUID. O endereço IP não é armazenado em texto puro.
+
+No painel, abrir o link prepara a mensagem. O responsável envia pelo WhatsApp e marca manualmente o contato como contatado; esse status é reversível.
+
+Em 13/10/2026 a campanha 24344233381 foi pausada a pedido de Tiago. Não reativar automaticamente após o deploy.

@@ -2,6 +2,7 @@ import { createHash, createHmac, randomUUID, timingSafeEqual } from 'node:crypto
 import { normalizeAnswers, schemaVersion } from '../public/assets/briefing-schema.mjs';
 import { approvedBuildJob } from '../automation/workflow-rules.mjs';
 import { adminWorkflow, notifyReview, notifyBriefing } from './review.mjs';
+import { createLead } from './leads.mjs';
 
 export class HttpError extends Error { constructor(status, message) { super(message); this.status = status; } }
 const required = name => { const value = process.env[name]; if (!value) throw new HttpError(503, 'A integração ainda está em configuração.'); return value; };
@@ -103,6 +104,7 @@ export async function submitBriefing(input, headers) {
 }
 export async function workflow(action, input, headers = {}) {
   if (action?.startsWith('admin-')) return adminWorkflow(action, input, headers);
+  if (action === 'lead') return createLead(input, headers);
   if (action === 'checkout') throw new HttpError(410, 'O pagamento direto foi encerrado. Converse com a Logos Data para definir seu projeto.');
   if (action === 'confirm' || action === 'webhook') return confirmPayment(input);
   if (action === 'access') { const order = await authenticatedOrder(headers); return { submitted: !!order.briefing }; }

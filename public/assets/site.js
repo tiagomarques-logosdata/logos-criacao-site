@@ -7,32 +7,6 @@ if (adsId) {
   window.gtag('js', new Date());
   window.gtag('config', adsId);
 }
-if (adsId && adsConversion) {
-  document.addEventListener('click', event => {
-    const anchor = event.target.closest('a[href]');
-    if (!anchor) return;
-    const destination = new URL(anchor.href, location.href);
-    if (destination.hostname !== 'wa.me') return;
-    const opensHere = (!anchor.target || anchor.target === '_self') &&
-      !event.ctrlKey && !event.metaKey && !event.shiftKey && !event.altKey && event.button === 0;
-    let navigated = false;
-    const continueToWhatsApp = () => {
-      if (!opensHere || navigated) return;
-      navigated = true;
-      window.location.assign(anchor.href);
-    };
-    if (opensHere) {
-      event.preventDefault();
-      // Continue even when the tag is blocked or the network is unavailable.
-      window.setTimeout(continueToWhatsApp, 1000);
-    }
-    // Only the conversion identifier is sent; the WhatsApp message stays private.
-    window.gtag('event', 'conversion', {
-      send_to: adsConversion, value: 1.0, currency: 'BRL',
-      event_callback: continueToWhatsApp, event_timeout: 1000,
-    });
-  });
-}
 const menu = document.querySelector('.menu-toggle');
 const nav = document.querySelector('#navigation');
 function closeMenu() {
@@ -78,25 +52,38 @@ existingSite?.addEventListener('change', () => {
   input.disabled = !hasSite;
   input.required = hasSite;
 });
-form?.addEventListener('submit', event => {
+let leadRequest = null;
+form?.addEventListener('submit', async event => {
   event.preventDefault();
   if (!form.reportValidity()) return;
-  const data = new FormData(form);
-  const message = [
-    'Olá! Quero falar sobre meu site',
-    `Nome: ${data.get('nome')}`,
-    `Tipo de projeto: ${data.get('tipo')}`, `Sobre minha empresa: ${data.get('projeto')}`,
-  ].join('\n');
-  const link = document.createElement('a');
-  link.href = `https://wa.me/5511983195720?text=${encodeURIComponent(message)}`;
-  link.target = '_blank';
-  link.rel = 'noopener noreferrer';
-  link.textContent = 'Abrir mensagem no WhatsApp →';
+  const button = form.querySelector('button[type="submit"]');
+  if (button.disabled) return;
   const status = document.querySelector('#form-status');
-  status.replaceChildren('Revise e confirme o envio no WhatsApp. Se a janela não abrir, ', link);
-  // The click stays within the user's submit action; no message is sent automatically.
-  link.click();
+  const data = new FormData(form);
+  const details = {name: String(data.get('nome')).trim(), whatsapp: String(data.get('whatsapp')).trim(), consent: data.get('consent') === 'on', website: data.get('website') || ''};
+  const signature = JSON.stringify(details);
+  if (!leadRequest || leadRequest.signature !== signature) leadRequest = {signature, id: crypto.randomUUID()};
+  button.disabled = true;
+  status.textContent = 'Enviando seu contato…';
+  try {
+    const response = await fetch('/api/workflow?action=lead', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...details,id:leadRequest.id})});
+    const result = await response.json();
+    if (!response.ok || result.accepted !== true || result.id !== leadRequest.id) throw Error(result.error || 'Não foi possível salvar seu contato. Tente novamente.');
+    form.hidden = true;
+    const success = document.querySelector('#lead-success');
+    success.hidden = false;
+    success.focus();
+    if (adsId && adsConversion) {
+      // Only a successfully saved contact counts; never send name or phone to the tag.
+      window.gtag('event','conversion',{send_to:adsConversion,transaction_id:result.id});
+    }
+    form.reset();
+  } catch (error) {
+    status.textContent = error.message || 'Não foi possível enviar. Tente novamente ou use o botão WhatsApp no início da página.';
+    button.disabled = false;
+  }
 });
+
 document.querySelectorAll('[data-filter]').forEach(button => {
   button.addEventListener('click', () => {
     document.querySelectorAll('[data-filter]').forEach(other => {

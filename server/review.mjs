@@ -3,6 +3,7 @@ import { db, HttpError, mailTransport, tokenForOrder, hashToken, sendBriefingEma
 import { randomUUID } from 'node:crypto';
 import { analysisReady, analysisFingerprint } from '../automation/workflow-rules.mjs';
 import { normalizeAnswers, schemaVersion, sections } from '../public/assets/briefing-schema.mjs';
+import { adminLeads } from './leads.mjs';
 const origin = () => new URL(process.env.SITE_ORIGIN || 'https://www.logosdata.com.br').origin;
 const owner = () => process.env.SMTP_USER;
 const fields = new Set(sections.flatMap(s => s.fields.map(q => q.id)));
@@ -37,6 +38,7 @@ export async function adminWorkflow(action,input,headers) {
   const authentication=await authAction(action,input,headers);
   if(authentication)return authentication;
   await adminSession(headers);
+  if(action==='admin-leads'||action==='admin-lead-contacted')return adminLeads(action,input);
   if(action==='admin-invite'){
     const name=String(input.name||'').trim(),email=String(input.email||'').trim().toLowerCase(),scope=String(input.scope||'').trim(),deadline=String(input.deadline||'').trim();
     if(!name||name.length>120||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)||email.length>160||scope.length<20||scope.length>8000||!deadline||deadline.length>1000||input.confirmed!==true)throw new HttpError(400,'Informe o cliente, e-mail, escopo, prazo e confirme a contratação combinada.');
