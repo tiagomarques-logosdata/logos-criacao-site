@@ -2,7 +2,7 @@ import { createHash, createHmac, randomUUID, timingSafeEqual } from 'node:crypto
 import { normalizeAnswers, schemaVersion } from '../public/assets/briefing-schema.mjs';
 import { approvedBuildJob } from '../automation/workflow-rules.mjs';
 import { adminWorkflow, notifyReview, notifyBriefing } from './review.mjs';
-import { createLead } from './leads.mjs';
+import { createLead, retryLeadNotifications } from './leads.mjs';
 
 export class HttpError extends Error { constructor(status, message) { super(message); this.status = status; } }
 const required = name => { const value = process.env[name]; if (!value) throw new HttpError(503, 'A integração ainda está em configuração.'); return value; };
@@ -167,7 +167,8 @@ export async function workflow(action, input, headers = {}) {
     for(const order of notices)await notifyBriefing(order);
     const reviews = await db('logos_orders?status=in.(needs_review,completed)&review_email_sent_at=is.null&limit=10');
     for (const order of reviews) await notifyReview(order);
-    return { attempted: rows.length, reviews: reviews.length };
+    const leads=await retryLeadNotifications();
+    return { attempted: rows.length, reviews: reviews.length, leads };
   }
   throw new HttpError(404, 'Operação não encontrada.');
 }

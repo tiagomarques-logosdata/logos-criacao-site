@@ -1,3 +1,5 @@
+import { waitUntil } from '@vercel/functions';
+import { notifyLead } from '../server/leads.mjs';
 import { workflow, HttpError } from '../server/workflow.mjs';
 export const config = { maxDuration: 60 };
 export default async function handler(req, res) {
@@ -19,6 +21,11 @@ export default async function handler(req, res) {
     if (typeof body === 'string') { try { body = JSON.parse(body); } catch { throw new HttpError(400, 'JSON inválido.'); } }
     if (body && Buffer.byteLength(JSON.stringify(body)) > 500000) throw new HttpError(413, 'Documento muito grande.');
     const result = await workflow(action, body || {}, req.headers);
+    if (action === 'lead' && result.accepted) {
+      const notification = notifyLead(result.id).catch(() => {});
+      if (process.env.VERCEL) waitUntil(notification);
+      else await notification;
+    }
     if (result.__cookie) { res.setHeader('Set-Cookie', result.__cookie); delete result.__cookie; }
     res.statusCode = 200; res.end(JSON.stringify(result));
   } catch (error) {

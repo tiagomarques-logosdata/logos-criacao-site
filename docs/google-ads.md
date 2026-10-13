@@ -17,3 +17,8 @@ O formulário exige nome, celular brasileiro com DDD e autorização de contato.
 No painel, abrir o link prepara a mensagem. O responsável envia pelo WhatsApp e marca manualmente o contato como contatado; esse status é reversível.
 
 Em 13/10/2026 a campanha 24344233381 foi pausada a pedido de Tiago. Não reativar automaticamente após o deploy.
+
+## Avisos de novos contatos
+
+Aplicar também docs/lead-notifications.sql. Novos registros ficam pendentes para notificação; registros anteriores não geram avisos retroativos. A API usa waitUntil da Vercel para enviar ao SMTP_USER após salvar o contato, sem bloquear a confirmação do formulário. O executor existente tenta novamente os avisos pendentes por retry-emails. Claim no banco evita envios concorrentes e o e-mail usa um Message-ID estável. O aviso inclui nome, WhatsApp, data, painel e link de mensagem pronta; nenhum e-mail é enviado ao visitante.
+

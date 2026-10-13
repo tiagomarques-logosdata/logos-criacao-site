@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.117.3",
+    "@vercel/functions": "^3.10.0",
     "nodemailer": "^10.0.16"
   }
 }
