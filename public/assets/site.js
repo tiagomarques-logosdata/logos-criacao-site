@@ -79,7 +79,7 @@ form?.addEventListener('submit', async event => {
     }
     form.reset();
   } catch (error) {
-    status.textContent = error.message || 'Não foi possível enviar. Tente novamente ou use o botão WhatsApp no início da página.';
+    status.textContent = error.message || 'Não foi possível enviar. Tente novamente em alguns minutos.';
     button.disabled = false;
   }
 });

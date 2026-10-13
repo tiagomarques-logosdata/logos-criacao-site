@@ -1,6 +1,5 @@
 export const site = {
   name: 'Logos Data', origin: 'https://www.logosdata.com.br',
-  whatsapp: '5511983195720',
   pillars: ['Desenvolvimento', 'Automação', 'Dados', 'Inteligência Artificial'],
 };
 export const projects = [

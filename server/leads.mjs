@@ -18,7 +18,7 @@ export async function createLead(input,headers) {
   const expected = new URL(process.env.SITE_ORIGIN || 'https://www.logosdata.com.br').origin;
   if (headers.origin !== expected) throw new HttpError(403,'Envie o formulário pelo site da Logos Data.');
   const secret=process.env.BRIEFING_TOKEN_SECRET;
-  if (!secret) throw new HttpError(503,'Contato indisponível agora. Use o botão do WhatsApp.');
+  if (!secret) throw new HttpError(503,'Contato indisponível agora. Tente novamente em alguns minutos.');
   // Vercel supplies this trusted header; never use a client-provided forwarding header for the limit.
   const ip=String(headers['x-vercel-forwarded-for'] || 'unknown').split(',')[0].trim();
   const hash=createHmac('sha256',secret).update(`lead-rate-v1:${ip}`).digest('hex');
